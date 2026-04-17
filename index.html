@@ -14,19 +14,19 @@
     .field { margin-bottom: 1rem; }
     .field:last-child { margin-bottom: 0; }
     .field-label { display: block; font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 6px; }
-    input[type="text"], input[type="date"], textarea {
+    input[type="text"], input[type="date"], textarea, select {
       width: 100%; font-size: 14px; font-family: inherit;
       background: #f9f9f8; border: 0.5px solid rgba(0,0,0,0.2);
       border-radius: 8px; color: #1a1a1a; padding: 8px 12px;
       outline: none; transition: border-color 0.15s;
     }
-    input[type="text"]:focus, input[type="date"]:focus, textarea:focus { border-color: rgba(0,0,0,0.5); }
+    input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus { border-color: rgba(0,0,0,0.5); }
     textarea { resize: vertical; min-height: 80px; }
     .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
     .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
     .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1a1a1a; cursor: pointer; }
     .checkbox-item input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #3a7bd5; flex-shrink: 0; }
-    .other-comment { margin-top: 8px; margin-left: 23px; display: none; }
+    .sub-field { margin-top: 8px; margin-left: 23px; display: none; }
     .drop-zone {
       border: 1.5px dashed rgba(0,0,0,0.2); border-radius: 12px;
       padding: 2rem 1rem; text-align: center; cursor: pointer; transition: background 0.15s;
@@ -36,26 +36,14 @@
     .drop-zone p { margin: 4px 0; font-size: 14px; color: #666; }
     .drop-zone .hint { font-size: 12px; color: #aaa; }
     .btn-row { display: flex; gap: 10px; margin-top: 1rem; justify-content: flex-end; }
-    .btn-choose {
-      font-size: 14px; font-weight: 500; padding: 8px 18px;
-      border: 0.5px solid rgba(0,0,0,0.2); border-radius: 8px;
-      background: #f5f5f3; color: #1a1a1a; cursor: pointer;
-    }
-    .btn-upload {
-      font-size: 14px; font-weight: 500; padding: 8px 22px;
-      border: none; border-radius: 8px;
-      background: #1a1a1a; color: #fff; cursor: pointer;
-    }
+    .btn-choose { font-size: 14px; font-weight: 500; padding: 8px 18px; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 8px; background: #f5f5f3; color: #1a1a1a; cursor: pointer; }
+    .btn-upload { font-size: 14px; font-weight: 500; padding: 8px 22px; border: none; border-radius: 8px; background: #1a1a1a; color: #fff; cursor: pointer; }
     .btn-choose:hover { background: #ebebea; }
     .btn-upload:hover { background: #333; }
     .btn-upload:disabled { background: #999; cursor: not-allowed; }
     .file-list { margin-top: 1rem; display: none; }
     .file-list-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 8px; }
-    .file-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; background: #f9f9f8;
-      border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 6px;
-    }
+    .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f9f9f8; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 6px; }
     .file-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
     .file-info { flex: 1; min-width: 0; }
     .file-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -79,46 +67,56 @@
   <h1>Sundae Photo Upload</h1>
 
   <!-- ============================================================
-       STEP 1: PASTE YOUR DROPBOX ACCESS TOKEN BELOW
+       PASTE YOUR DROPBOX ACCESS TOKEN BELOW
        Get one at: https://www.dropbox.com/developers/apps
-       Create an app → Scoped access → Full Dropbox → Generate token
+       Create an app → Scoped access → App Folder → Generate token
        ============================================================ -->
   <script>
-    const DROPBOX_TOKEN = 'sl.u.AGZqEKpN7pdNfLThNBzf44REwIWOCvHKX8q62kVvDZCExHFvmoZj4RvrrYRKPKYDZ1sKMZpse31xU8J7EAl0ir6rD5JQCgsF2jFUAUYTw-atGJNrOvPwkaoFPqfI-FiuYIYGxE42eEhVwM0WCuYOFeuf51ALzHMStaSU0m096dB-hu5CP3GS_ayj6Pd3kEd9vAtyjHXoj83lFIPyI6tHe2XrAmn_VzW-Fe4cwX5hrfNcfylWuzM2Vm1f3zcl5WJDW7FZCY2pxNaB-x4oY9jVbCYu87TILWEUIsu1Q9JWl5WmM08-pjEwNuUBuUqlBd-Abr7NUUYRG5NvNhPaTJE-znTOCQOaah5wd8btzk3sMvPcAVFQYfPlb4-STx0vYTXu-7Gb_R7Wca98BUV2SbeIB5yITU36vWDk0JM_vsQlOEjvXBSm2Y7AoqoBGqOV9DYTrhLfoaN1otdEoG9foGn_BzIYSe3rMz7QZ_YIwVU-PG0ApARQRbrRmOGyujbW-5Lh9OO97KPYk4x2NR-rmLwt_xyCFppk4jFeB6UZ4oKabytGAKrcNMzHf5VHgh1NeZKOCjJPwIatIlZhue4kOhfJZFdWGSlDy9BqcVFpiBb7JpJF4wpU_tHGMF36dhmCv7JIYowhCaUuTPT5s0FfGZfmuRnu-bpzIegWAibZuXgN7rpdhQDqwuNVsrwaGkGDeMbdtL9UuiemC1hGvBciQwFQ7LCi5CK4Ch6TypAjgN0yJlFevECKNDe3HXHWINCh1nW4KpvcrFcACroOeWS9z14fzA6OWic4PQIjahxaNrKxKb6uCVDXVyYCLLBiBDG5LnlB_ikBCSQ_LVBpeQ0mKDMvuJJF-I9CW7pxhGATawWV8JcufXjNbhCASDU0Y5H5b5jzEwzFAC7zkr5OaOfA-Zt5kd6iwf4RhdlNXwGbElhIx4J-GufANaFJY4wjETywd3hZ2WH3xE6twaD1vjdgwZuHKSe3BvPJHXGdZa-mW94vRLzzjHRRazK_8jwo0jDNC7hFbfoMykMSaLGbOkQO7s7X3hfi3Gh283Iz2xYX0da-wN8sNJ5SP4CMpaLYqjvbbpy-u3DPjLGh7ZrjJMyK71Q7Dz3K6wI169HPabPnobU2l4Xo-7ofUgnok6GZYg-BccNWc_h0s47yrpifKcituNEUyEawG_z9WkYk20bkfnlf8Big-49-_vtenzx9njub9--78wT1KsoHJNb6Ezv-DILjBv--TmuB-P2HlMCokOue7XBOSDXwhC7KsNqyfzdoCUk_2eKglsKvKqG2GtWqoK3XF3Ml5qehDHTSYO2XY-BTbImFaH8TvqLTHRymLWpWALFnXsI';
+    const DROPBOX_TOKEN = 'sl.u.AGaZKvzD0IwykyIrlQJSKb9GACuxnOUlHoRrvkr-U257wIbP2VO4AeyOPKnlmU1wOwPoplL1rZhJMV_FSxvWWamsXIpks6KAoN055U64eqjjkuSpDb7YrjnqN0NK8CnW35dSa4txFNJDk-5q9hKgIx0SXpk9Y9lP38_TSzjrFTr1XNWKjN2GGIFow4Ts_-vb-7ljIW0w4GiYHeyIcbVanY272rWosAkzgrZzRjlNEAhpmDTxN5aG20TslOKvJrcWDbRSTfCF1j602cfea8ZuFJJNga8pUYRBOZFUyRq6ZhraXMVS6eeZtLQFC8JsF2f5N37MuSAWPEZUBXxeD3ZFT8NVDV1KSghXr5C9RkfUbTrUeq1Ik8YPxbh59F_-U5gTORc7AX3PJ7osqPQFa6PwVAIt5uDzY7DUtdkSrlYDa0ioNi1RQNRormCU4Jp_9VG9Y-wUYsoxFQ2XyFhbgdMODP9wn0VutgAaElnYsCKsQq2VgyvT8BmVRLBhhDJ0tlrEAcS8eKvCa87edjlCCclkXKsExjClMBZDzQFdUM1xT9mMgZBkRz7IzzzV7x4Kw6u9T3v2g-__zDvIDNzokuL3ArW98RdNINuVnEzpIrESwwDCS6DHEKuZYlR4xaxPUIqOkiu3TAIVzKaihfQ7vX0ZkvfKNrlotgSrBZz9d8dxE1yNVy33gYSryA5P1a3thb148_sal26AQZo3ndX_aX5VSFQMOYxNXgVHFqMYcwhtbjwOTq2ClUWb5WLrDhQYPFOem7rfuP6cxCw1vmLl5yDFHSzNxdulQQCJrCo_I--oxWfvODu0Ss18iIItgTkRlcaYqoP5-mubJWMvCVJT4sRjmD0Gt3EWDam8MykwH4_Erc2R-g0JzouPdOMUwDNdOG3hBurLryi6H9ph8N_eU0DKcHMgY1gRXxnjYIcPPkhMIAz9z_-JSFfOxDVEWwsP438OcAuTEAWVGy7CSYLwDlRMYKVD6lh4kgC--ZT0x1XfkFJkMX8nLTkKEHgRKCWVi7W1zczirxV3_msOxtCv1tWrwcxWl4Bpkom84qfPSYroZlff5CCFW4ZJ3fe1zZ7K04eaRqDL53u4njjih_d28sKZEwTyogQXWQfWi4wpIxz9RA4hYbOGAdiGdcsqp_XWCygZvZ3m2t1YfArjVmiWHv-xWPTYb797mnOgkxnpetdXJgSKpSCSZJhSoAhzsDZccR4q2PgwMt9_UGwq_LJm6hPFQmDBykItC4USMqi9LNcCdA3Ljgp4I7JqwyVUIuzeY0JRrA7nYMrz8tHwjt3rgfaBsY-mM53-XSb2qS-AwAUPY3Lijtbat4AQTCd6lP32jnjiUrc';
     const DROPBOX_FOLDER = '';
     const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx1f5XBO11YlTluTF4eRWkDMB6PcL9L7I1UpaVFL08IOPfS5foj6mFOxqCMkVczeKpb/exec';
   </script>
 
+  <!-- Type of image -->
   <div class="section-card">
     <p class="section-title">Type of image</p>
     <div class="checkbox-list">
-      <label class="checkbox-item"><input type="checkbox" name="img_type" value="Sundae on-shelf"> Sundae on-shelf</label>
-              <label class="checkbox-item"><input type="checkbox" name="img_type" value="Sundae secondary placement display" id="secondaryCheck"> Sundae secondary placement display</label>
-        <div id="secondaryOptions" style="display:none; margin-left:23px; margin-top:4px;">
-          <select id="secondaryType" style="width:100%;font-size:14px;font-family:inherit;background:#f9f9f8;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;color:#1a1a1a;padding:8px 12px;outline:none;">
-            <option value="">— Select placement type —</option>
-            <option value="endcap">End-cap</option>
-            <option value="sidekick">Sidekick</option>
-            <option value="aislefin">Aisle fin</option>
-            <option value="other">Other</option>
-          </select>
-          <div id="secondaryOtherBox" style="display:none; margin-top:6px;">
-            <input type="text" id="secondaryOther" placeholder="Please describe the placement type…">
-          </div>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="Sundae on-shelf"> Sundae on-shelf
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="Sundae secondary placement display" id="secondaryCheck"> Sundae secondary placement display
+      </label>
+      <div class="sub-field" id="secondaryOptions">
+        <select id="secondaryType">
+          <option value="">— Select placement type —</option>
+          <option value="endcap">End-cap</option>
+          <option value="sidekick">Sidekick</option>
+          <option value="aislefin">Aisle fin</option>
+          <option value="other">Other</option>
+        </select>
+        <div class="sub-field" id="secondaryOtherBox" style="margin-left:0; margin-top:6px;">
+          <input type="text" id="secondaryOther" placeholder="Please describe the placement type…">
         </div>
-      <label class="checkbox-item"><input type="checkbox" name="img_type" value="Competitor product"> Competitor product</label>
-      <label class="checkbox-item"><input type="checkbox" name="img_type" value="other" id="otherCheck"> Other</label>
-      <div class="other-comment" id="otherCommentBox">
+      </div>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="Competitor product"> Competitor product
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="other" id="otherCheck"> Other
+      </label>
+      <div class="sub-field" id="otherCommentBox">
         <input type="text" id="otherComment" placeholder="Please describe the image type…">
       </div>
     </div>
   </div>
 
+  <!-- Store details -->
   <div class="section-card">
     <p class="section-title">Store details</p>
     <div class="field">
       <label class="field-label">Country <span class="required">*</span></label>
-      <select id="country" style="width:100%;font-size:14px;font-family:inherit;background:#f9f9f8;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;color:#1a1a1a;padding:8px 12px;outline:none;">
+      <select id="country">
         <option value="">— Select your country —</option>
         <option value="AUS">Australia</option>
         <option value="NZ">New Zealand</option>
@@ -148,22 +146,25 @@
     </div>
   </div>
 
+  <!-- Products on display -->
   <div class="section-card">
     <p class="section-title">Product on display</p>
     <div class="checkbox-grid">
-      <label class="checkbox-item"><input type="checkbox" name="product" value="Shower Foams"> Shower Foams</label>
-      <label class="checkbox-item"><input type="checkbox" name="product" value="Body Mists"> Body Mists</label>
-      <label class="checkbox-item"><input type="checkbox" name="product" value="Body Whips"> Body Whips</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="ShowerFoams"> Shower Foams</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="BodyMists"> Body Mists</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="BodyWhips"> Body Whips</label>
       <label class="checkbox-item"><input type="checkbox" name="product" value="Suncare"> Suncare</label>
-      <label class="checkbox-item"><input type="checkbox" name="product" value="Kids Collection"> Kids Collection</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="KidsCollection"> Kids Collection</label>
     </div>
   </div>
 
+  <!-- Comments -->
   <div class="section-card">
     <p class="section-title">Additional comments / notes</p>
     <textarea id="comments" placeholder="Any extra context, observations, or notes…"></textarea>
   </div>
 
+  <!-- File upload -->
   <div class="section-card">
     <p class="section-title">Upload photos</p>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
@@ -193,18 +194,25 @@
 </div>
 
 <script>
-  // --- Other checkbox toggle ---
+  // --- Secondary placement toggle ---
   document.getElementById('secondaryCheck').addEventListener('change', function() {
-    document.getElementById('secondaryOptions').style.display = this.checked ? 'block' : 'none';
-    if (!this.checked) { document.getElementById('secondaryType').value = ''; document.getElementById('secondaryOtherBox').style.display = 'none'; document.getElementById('secondaryOther').value = ''; }
+    const opts = document.getElementById('secondaryOptions');
+    opts.style.display = this.checked ? 'block' : 'none';
+    if (!this.checked) {
+      document.getElementById('secondaryType').value = '';
+      document.getElementById('secondaryOtherBox').style.display = 'none';
+      document.getElementById('secondaryOther').value = '';
+    }
   });
 
   document.getElementById('secondaryType').addEventListener('change', function() {
-    document.getElementById('secondaryOtherBox').style.display = this.value === 'other' ? 'block' : 'none';
+    const otherBox = document.getElementById('secondaryOtherBox');
+    otherBox.style.display = this.value === 'other' ? 'block' : 'none';
     if (this.value !== 'other') document.getElementById('secondaryOther').value = '';
   });
 
-
+  // --- Other image type toggle ---
+  document.getElementById('otherCheck').addEventListener('change', function() {
     const box = document.getElementById('otherCommentBox');
     box.style.display = this.checked ? 'block' : 'none';
     if (!this.checked) document.getElementById('otherComment').value = '';
@@ -268,12 +276,10 @@
     if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; renderFiles(e.dataTransfer.files); }
   });
 
-  // --- Build safe filename prefix ---
   function slugify(str) {
     return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
   }
 
-  // --- Upload to Dropbox ---
   async function uploadToDropbox(file, path) {
     const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
@@ -284,137 +290,107 @@
       },
       body: file
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error_summary || 'Upload failed');
-    }
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error_summary || 'Upload failed'); }
     return res.json();
   }
 
-  // --- Main submit handler ---
   async function handleUpload() {
-    const country = document.getElementById('country').value.trim();
+    const country = document.getElementById('country').value;
     const retailer = document.getElementById('retailer').value.trim();
     const location = document.getElementById('location').value.trim();
     const date = document.getElementById('photo_date').value;
     const comments = document.getElementById('comments').value.trim();
     const files = fileInput.files;
-    const imgTypes = [...document.querySelectorAll('input[name="img_type"]:checked')].map(c => c.value);
+    const imgTypeChecked = [...document.querySelectorAll('input[name="img_type"]:checked')];
     const otherChecked = document.getElementById('otherCheck').checked;
     const otherComment = document.getElementById('otherComment').value.trim();
+    const secondaryChecked = document.getElementById('secondaryCheck').checked;
+    const secondaryType = document.getElementById('secondaryType').value;
+    const secondaryOther = document.getElementById('secondaryOther').value.trim();
     const products = [...document.querySelectorAll('input[name="product"]:checked')].map(c => c.value);
 
     // Validation
-    if (!country || !retailer || !location || !date) {
-      return showError('Please fill in all required store details (country, retailer, location, date).');
-    }
-    if (imgTypes.length === 0) return showError('Please select at least one image type.');
+    if (!country) return showError('Please select a country.');
+    if (!retailer || !location || !date) return showError('Please fill in all required store details.');
+    if (imgTypeChecked.length === 0) return showError('Please select at least one image type.');
+    if (secondaryChecked && !secondaryType) return showError('Please select a secondary placement type.');
+    if (secondaryChecked && secondaryType === 'other' && !secondaryOther) return showError('Please describe the secondary placement type.');
     if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
     if (!files || !files.length) return showError('Please select at least one file to upload.');
-    if (DROPBOX_TOKEN === 'PASTE_YOUR_DROPBOX_ACCESS_TOKEN_HERE') {
-      return showError('No Dropbox token found. Please add your access token to the HTML file.');
-    }
+    if (DROPBOX_TOKEN === 'PASTE_YOUR_DROPBOX_ACCESS_TOKEN_HERE') return showError('No Dropbox token found. Please add your access token to the HTML file.');
 
-    // Build prefix: Country_Retailer_StoreLocation_Date
-    const prefix = [slugify(country), slugify(retailer), slugify(location), slugify(date)].join('_');
+    // Build image type codes
+    const imgTypeMap = { 'Sundae on-shelf': 'shelf', 'Competitor product': 'competitor', 'other': 'other' };
+    const imgTypeCodes = imgTypeChecked.map(c => {
+      if (c.value === 'Sundae secondary placement display') {
+        const secLabel = secondaryType === 'other' ? slugify(secondaryOther) : secondaryType;
+        return 'secondary' + (secLabel ? '_' + secLabel : '');
+      }
+      return imgTypeMap[c.value] || 'other';
+    }).join('_');
+
+    // Build product codes
+    const productCodes = products.join('_') || 'NoProduct';
+
+    // Final filename prefix: Country_Retailer_Location_Products_ImageType_Date
+    const prefix = [slugify(country), slugify(retailer), slugify(location), productCodes, imgTypeCodes, slugify(date)].join('_');
 
     const btn = document.getElementById('uploadBtn');
-    btn.disabled = true;
-    btn.textContent = 'Uploading…';
-    hideMessages();
-    showProgress(0);
+    btn.disabled = true; btn.textContent = 'Uploading…';
+    hideMessages(); showProgress(0);
 
     try {
-      const total = files.length + 1; // +1 for summary txt
+      const total = files.length + 1;
       let done = 0;
-
-      // Build image type shortcodes
-      const imgTypeMap = {
-        'Sundae on-shelf': 'shelf',
-        'Sundae secondary placement display': (() => {
-          const secType = document.getElementById('secondaryType').value;
-          const secOther = document.getElementById('secondaryOther').value.trim();
-          return 'secondary' + (secType ? '_' + (secType === 'other' ? slugify(secOther) : secType) : '');
-        })(),
-        'Competitor product': 'competitor',
-        'other': 'other'
-      };
-      const imgTypeCodes = imgTypes.map(v => imgTypeMap[v] || 'other').join('_');
-
-      // Build product shortcodes (remove spaces)
-      const productCodes = products.map(p => slugify(p.replace(/\s+/g, ''))).join('_');
-
-      // Final prefix: Country_Retailer_Location_Products_ImageTypes_Date
-      const prefix = [
-        slugify(country),
-        slugify(retailer),
-        slugify(location),
-        productCodes || 'NoProduct',
-        imgTypeCodes || 'NoType',
-        slugify(date)
-      ].join('_');
-
-      // Upload each file with renamed prefix
       let fileIndex = 1;
+
       for (const file of Array.from(files)) {
         const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
         const newName = prefix + '_' + fileIndex + (ext ? '.' + ext : '');
-        const path = DROPBOX_FOLDER + '/' + slugify(country) + '/' + newName;
-        await uploadToDropbox(file, path);
-        done++;
-        fileIndex++;
+        await uploadToDropbox(file, DROPBOX_FOLDER + '/' + slugify(country) + '/' + newName);
+        done++; fileIndex++;
         showProgress(Math.round((done / total) * 100));
       }
 
-      // Build and upload summary .txt
-      const imgTypesFull = imgTypes.map(v => v === 'other' ? 'Other: ' + otherComment : v);
+      // Summary txt
+      const imgTypesDisplay = imgTypeChecked.map(c => {
+        if (c.value === 'Sundae secondary placement display') {
+          const secLabel = secondaryType === 'other' ? secondaryOther : secondaryType;
+          return 'Sundae secondary placement display' + (secLabel ? ' (' + secLabel + ')' : '');
+        }
+        return c.value === 'other' ? 'Other: ' + otherComment : c.value;
+      });
+
       const summary = [
         'SUNDAE PHOTO SUBMISSION SUMMARY',
         '================================',
         'Submitted: ' + new Date().toLocaleString(),
-        '',
-        'TYPE OF IMAGE:',
-        imgTypesFull.map(t => '  - ' + t).join('\n'),
-        '',
-        'STORE DETAILS:',
+        '', 'TYPE OF IMAGE:', imgTypesDisplay.map(t => '  - ' + t).join('\n'),
+        '', 'STORE DETAILS:',
         '  Country:        ' + country,
         '  Retailer:       ' + retailer,
         '  Store location: ' + location,
         '  Date taken:     ' + date,
-        '',
-        'PRODUCTS ON DISPLAY:',
-        products.length ? products.map(p => '  - ' + p).join('\n') : '  None selected',
-        '',
-        'ADDITIONAL COMMENTS:',
-        comments || '  None',
-        '',
-        'FILES UPLOADED:',
-        Array.from(files).map(f => '  - ' + f.name + ' (' + formatSize(f.size) + ')').join('\n')
+        '', 'PRODUCTS ON DISPLAY:', products.length ? products.map(p => '  - ' + p).join('\n') : '  None selected',
+        '', 'ADDITIONAL COMMENTS:', comments || '  None',
+        '', 'FILES UPLOADED:', Array.from(files).map((f, i) => '  - ' + prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join('\n')
       ].join('\n');
 
       const summaryBlob = new Blob([summary], { type: 'text/plain' });
-      const summaryFile = new File([summaryBlob], prefix + '_summary.txt');
-      await uploadToDropbox(summaryFile, DROPBOX_FOLDER + '/' + slugify(country) + '/' + prefix + '_summary.txt');
-      done++;
-      showProgress(100);
+      await uploadToDropbox(new File([summaryBlob], prefix + '_summary.txt'), DROPBOX_FOLDER + '/' + slugify(country) + '/' + prefix + '_summary.txt');
+      done++; showProgress(100);
 
-      // Send data to Google Sheets
-      const imgTypesFull2 = [...document.querySelectorAll('input[name="img_type"]:checked')].map(c => c.value === 'other' ? 'Other: ' + otherComment : c.value);
-      const products2 = [...document.querySelectorAll('input[name="product"]:checked')].map(c => c.value);
+      // Send to Google Sheets
       await fetch(SHEETS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
+        method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dateSubmitted: new Date().toLocaleString(),
-          country: country,
-          retailer: retailer,
-          storeLocation: location,
-          datePhotoTaken: date,
-          imageType: imgTypesFull2.join(', '),
-          products: products2.join(', '),
-          comments: comments,
-          filesUploaded: Array.from(files).map(f => f.name).join(', ')
+          country, retailer, storeLocation: location, datePhotoTaken: date,
+          imageType: imgTypesDisplay.join(', '),
+          products: products.join(', '),
+          comments,
+          filesUploaded: Array.from(files).map((f, i) => prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join(', ')
         })
       });
 
@@ -423,28 +399,22 @@
     } catch (err) {
       showError('Upload failed: ' + err.message);
     } finally {
-      btn.disabled = false;
-      btn.textContent = 'Upload';
+      btn.disabled = false; btn.textContent = 'Upload';
       setTimeout(() => hideProgress(), 1500);
     }
   }
 
-  function showProgress(pct) {
-    document.getElementById('progressWrap').style.display = 'block';
-    document.getElementById('progressBar').style.width = pct + '%';
-  }
+  function showProgress(pct) { document.getElementById('progressWrap').style.display = 'block'; document.getElementById('progressBar').style.width = pct + '%'; }
   function hideProgress() { document.getElementById('progressWrap').style.display = 'none'; }
-  function showError(msg) {
-    const el = document.getElementById('errorMsg');
-    el.textContent = '✕ ' + msg;
-    el.style.display = 'block';
-  }
-  function hideMessages() {
-    document.getElementById('successMsg').style.display = 'none';
-    document.getElementById('errorMsg').style.display = 'none';
-  }
+  function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = '✕ ' + msg; el.style.display = 'block'; }
+  function hideMessages() { document.getElementById('successMsg').style.display = 'none'; document.getElementById('errorMsg').style.display = 'none'; }
+
   function resetForm() {
     document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    document.getElementById('secondaryOptions').style.display = 'none';
+    document.getElementById('secondaryType').value = '';
+    document.getElementById('secondaryOtherBox').style.display = 'none';
+    document.getElementById('secondaryOther').value = '';
     document.getElementById('otherCommentBox').style.display = 'none';
     document.getElementById('otherComment').value = '';
     document.getElementById('country').value = '';
@@ -452,8 +422,7 @@
     document.getElementById('location').value = '';
     document.getElementById('photo_date').value = '';
     document.getElementById('comments').value = '';
-    fileInput.value = '';
-    renderFiles(null);
+    fileInput.value = ''; renderFiles(null);
   }
 </script>
 </body>
