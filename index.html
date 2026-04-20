@@ -249,30 +249,45 @@
     return ext.toUpperCase().slice(0, 3);
   }
 
+  let selectedFiles = [];
+
   function renderFiles(files) {
     const list = document.getElementById('fileList');
     const items = document.getElementById('fileItems');
     items.innerHTML = '';
     if (!files || !files.length) { list.style.display = 'none'; return; }
     list.style.display = 'block';
-    Array.from(files).forEach(f => {
+    files.forEach((f, index) => {
       const d = document.createElement('div');
       d.className = 'file-item';
       d.innerHTML = `<div class="file-icon" style="${getIconStyle(f.name)}">${getIconLabel(f.name)}</div>
         <div class="file-info">
           <div class="file-name">${f.name}${getBadge(f.name)}</div>
           <div class="file-meta">${formatSize(f.size)} · ${f.type || 'unknown type'}</div>
-        </div>`;
+        </div>
+        <button onclick="removeFile(${index})" style="background:none;border:none;cursor:pointer;font-size:16px;color:#aaa;padding:4px 8px;border-radius:6px;flex-shrink:0;" title="Remove file">✕</button>`;
       items.appendChild(d);
     });
   }
 
-  fileInput.addEventListener('change', () => renderFiles(fileInput.files));
+  function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    renderFiles(selectedFiles);
+  }
+
+  fileInput.addEventListener('change', () => {
+    selectedFiles = [...selectedFiles, ...Array.from(fileInput.files)];
+    renderFiles(selectedFiles);
+    fileInput.value = '';
+  });
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
   dropZone.addEventListener('drop', e => {
     e.preventDefault(); dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; renderFiles(e.dataTransfer.files); }
+    if (e.dataTransfer.files.length) {
+      selectedFiles = [...selectedFiles, ...Array.from(e.dataTransfer.files)];
+      renderFiles(selectedFiles);
+    }
   });
 
   function slugify(str) {
@@ -313,7 +328,7 @@
     const location = document.getElementById('location').value.trim();
     const date = document.getElementById('photo_date').value;
     const comments = document.getElementById('comments').value.trim();
-    const files = fileInput.files;
+    const files = selectedFiles;
     const imgTypeChecked = [...document.querySelectorAll('input[name="img_type"]:checked')];
     const otherChecked = document.getElementById('otherCheck').checked;
     const otherComment = document.getElementById('otherComment').value.trim();
@@ -451,7 +466,7 @@
     document.getElementById('location').value = '';
     document.getElementById('photo_date').value = '';
     document.getElementById('comments').value = '';
-    fileInput.value = ''; renderFiles(null);
+    fileInput.value = ''; selectedFiles = []; renderFiles(null);
   }
 </script>
 </body>
