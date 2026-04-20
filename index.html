@@ -382,7 +382,7 @@
       for (const file of Array.from(files)) {
         const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
         const newName = prefix + '_' + fileIndex + (ext ? '.' + ext : '');
-        const filePath = isMultiple ? folderPath + '/' + newName : DROPBOX_FOLDER + '/' + slugify(country) + '/' + newName;
+        const filePath = isMultiple ? folderPath + '/' + newName : DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + newName;
         await uploadToDropbox(file, filePath);
         if (!isMultiple) {
           const link = await getDropboxLink(filePath);
@@ -415,7 +415,7 @@
       ].join('\n');
 
       const summaryBlob = new Blob([summary], { type: 'text/plain' });
-      const summaryPath = isMultiple ? folderPath + '/' + prefix + '_summary.txt' : DROPBOX_FOLDER + '/' + slugify(country) + '/' + prefix + '_summary.txt';
+      const summaryPath = isMultiple ? folderPath + '/' + prefix + '_summary.txt' : DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + prefix + '_summary.txt';
       await uploadToDropbox(new File([summaryBlob], prefix + '_summary.txt'), summaryPath);
       done++; showProgress(100);
 
