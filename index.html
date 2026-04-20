@@ -350,12 +350,10 @@
 
       const res = await fetch(SHEETS_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      const result = await res.json();
-      if (result.result === 'error') throw new Error(result.error);
 
       showProgress(100);
       document.getElementById('successMsg').style.display = 'block';
