@@ -62,8 +62,6 @@
 <div class="form-wrap">
   <h1>Sundae Photo Upload</h1>
 
-
-
   <!-- Type of image -->
   <div class="section-card">
     <p class="section-title">Type of image</p>
@@ -171,15 +169,13 @@
       <button class="btn-choose" onclick="document.getElementById('fileInput').click()">Choose files</button>
       <button class="btn-upload" id="uploadBtn" onclick="handleUpload()">Upload</button>
     </div>
-    <div class="status-msg status-success" id="successMsg">✓ Submission uploaded successfully to Dropbox!</div>
+    <div class="status-msg status-success" id="successMsg">✓ Submission uploaded successfully!</div>
     <div class="status-msg status-error" id="errorMsg"></div>
   </div>
 </div>
 
 <script>
-  const DROPBOX_TOKEN = 'sl.u.AGbNj7JyoAZsFiFhWOOKXJgwxgZhxzVl4U7X96leyJoaD1TODQSMY0Fr_IVRFhKlOvvI34bFycPOOicpYY5lBFu8TE6e6XYQj2F5dS5y1sgNIDbQL29MG5UGt0b2xmzLVjMyfsAHk6npsrirWSt_6tgzH4Rcm_7R7F2DsrhnGzgpPZT1LLjPRQ1WSEi42S3FhMFvm2tjTu0soaH-mSXCPS3NoBEtjMf8EpnVTM075ALb_NOlesTYqJu_Z2sQAGHM6QlM4DHiFuFsFs2D534xL6rIx3mtZxBheVz2JjChInByADvBXwXT6VpKHfPNyMlBsoF8gsdAFyboVxzH05hcUkYekyNkVhGgQEFOKchJL42ICz9fbf-HPZvjz1m1W3Ih-BbNb8R3rnomyuuwn5-bZoTbcLVJQTLmegGwpjhtJNTSFa8OU9pCibhoCKtH_LQGoYS9nT8LqRPGNglwyimkpEIr2G8aII1vYL1u12CtZ0tb1IgJHoEg-hn0hNaFc9V36SJD0N3-wc0ZU_tXtFdeNqbR6GtMy-F_gJf-823t2bIFb8hEB2q7ZAxYE_XO4JbGPK31PeX8GE0NgmYpZVShnfuC05RE-Ff1mtrrep1n0at_di3YB2T1_PNpxQwp5Ua6g50BxWgx_4X0HSKZBmEVyDHs9CZtRpt68V84I1nR2C9J8SkavUD7jnung1cFG9ggg8WykLECs3GIT-z4q3A8UeGzX5ZXjKoMnFvmFlv-tSGLnVcnYu4zewQben8of_duJtGvWtQoEVdZhCSmIjD2PhCDqJwP1k9O6Hs0kVvDWhI5bGLJnSHcQLxIH9cT7KlPYYNhFtVYp1VAPfF0jbaDGQdo70Zm0n8l_Q-4_WUSRft8FuJ9GAsGpqk9wFyhgZ-W1ZdB5muHDCt7jd47AhLl4zxC7XPoph0yJb3t6faBQftSrht8pPo2FZpCxcUCteIB7VU7tr4Jc9aHGCqe4kHTXz8ZJOTxpKAWrvfCKUYHTZVWiw8rs3nr05yisyoBrE1rgKOntmKSyZlOrh20d67e0v8A-n_CCi5JOtOZYCFhlAifS8oMM0S6h8CwjDMkpa46pu0vXLUZV99YG6Y1FIFeVQDmxGM8z5CWewE6T6xCeB3pSx-aWzEA84cXXYVF450YpQDHczUm-nsAJyxkcGkOHZiG9B9leAvaqJBQLkvgrx1jfmLkMAl6umeli5LscSW7wOf9AOub1yYtQ4763GPVCIfnVrPWCRfyCnxr2d3nMVEelthS9bVsoTNUTO51MbOFX5MetA-SeYMRkoK-4v2hv3ewKdpB4YZkvS58QGHut5IzGpPIPX7z0yL0ILlynXoNevw';
-  const DROPBOX_FOLDER = '';
-  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwYi3UVAUr3KpVx_NP7E8wfOATQctrufOqk-OWnYNvL5Fd2ZaOI55GiA51OwLxJh-3G/exec';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwQBv9qjekxX2-uEnN34aB8ZjW7GgksHUe8q1qlksG_jk4nprYz7LTl2tBvRabdPrX_/exec';
 
   // Secondary placement toggle
   document.getElementById('secondaryCheck').addEventListener('change', function() {
@@ -264,35 +260,13 @@
     return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
   }
 
-  async function uploadToDropbox(file, path) {
-    const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + DROPBOX_TOKEN,
-        'Dropbox-API-Arg': JSON.stringify({ path, mode: 'add', autorename: true, mute: false }),
-        'Content-Type': 'application/octet-stream'
-      },
-      body: file
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.error_summary || 'Upload failed'); }
-    return res.json();
-  }
-
-  async function getDropboxLink(path) {
-    const res = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + DROPBOX_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ path, settings: { requested_visibility: 'public' } })
-    });
-    const data = await res.json();
-    if (data.url) return data.url.replace('?dl=0', '?raw=1');
-    if (data.error && data.error['.tag'] === 'shared_link_already_exists') {
-      return data.error.shared_link_already_exists.metadata.url.replace('?dl=0', '?raw=1');
-    }
-    return null;
   }
 
   async function handleUpload() {
@@ -319,7 +293,7 @@
     if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
     if (!files || !files.length) return showError('Please select at least one file to upload.');
 
-    // Build image type codes for filename
+    // Build image type codes
     const imgTypeMap = { 'Sundae on-shelf': 'shelf', 'Competitor product': 'competitor', 'other': 'other' };
     const imgTypeCodes = imgTypeChecked.map(c => {
       if (c.value === 'Sundae secondary placement display') {
@@ -329,7 +303,6 @@
       return imgTypeMap[c.value] || 'other';
     }).join('_');
 
-    // Build image type display for sheet
     const imgTypesDisplay = imgTypeChecked.map(c => {
       if (c.value === 'Sundae secondary placement display') {
         const secLabel = secondaryType === 'other' ? secondaryOther : secondaryType;
@@ -343,74 +316,48 @@
 
     const btn = document.getElementById('uploadBtn');
     btn.disabled = true; btn.textContent = 'Uploading…';
-    hideMessages(); showProgress(0);
+    hideMessages(); showProgress(10);
 
     try {
-      const total = files.length + 1;
-      let done = 0;
+      // Convert files to base64
+      const filesData = [];
       let fileIndex = 1;
-      const imageLinks = [];
-      const isMultiple = files.length > 1;
-      const folderPath = DROPBOX_FOLDER + '/' + slugify(country) + '/' + prefix;
-
       for (const file of Array.from(files)) {
         const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
         const newName = prefix + '_' + fileIndex + (ext ? '.' + ext : '');
-        const filePath = isMultiple ? folderPath + '/' + newName : DROPBOX_FOLDER + '/' + slugify(country) + '/' + newName;
-        await uploadToDropbox(file, filePath);
-        if (!isMultiple) {
-          const link = await getDropboxLink(filePath);
-          if (link) imageLinks.push(link);
-        }
-        done++; fileIndex++;
-        showProgress(Math.round((done / total) * 100));
+        const base64 = await fileToBase64(file);
+        filesData.push({ name: newName, type: file.type, data: base64 });
+        fileIndex++;
       }
 
-      if (isMultiple) {
-        const folderLink = await getDropboxLink(folderPath);
-        if (folderLink) imageLinks.push(folderLink);
-      }
+      showProgress(50);
 
-      // Summary txt
-      const summary = [
-        'SUNDAE PHOTO SUBMISSION SUMMARY',
-        '================================',
-        'Submitted: ' + new Date().toLocaleString(),
-        '', 'TYPE OF IMAGE:', imgTypesDisplay.map(t => '  - ' + t).join('\n'),
-        '', 'STORE DETAILS:',
-        '  Country:        ' + country,
-        '  Retailer:       ' + retailer,
-        '  Store location: ' + location,
-        '  Date taken:     ' + date,
-        '', 'PRODUCTS ON DISPLAY:', products.length ? products.map(p => '  - ' + p).join('\n') : '  None selected',
-        '', 'ADDITIONAL COMMENTS:', comments || '  None',
-        '', 'FILES UPLOADED:', Array.from(files).map((f, i) => '  - ' + prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join('\n'),
-        '', 'IMAGE LINKS:', imageLinks.length ? imageLinks.map(l => '  - ' + l).join('\n') : '  None generated'
-      ].join('\n');
+      // Send everything to Apps Script
+      const payload = {
+        dateSubmitted: new Date().toLocaleString(),
+        country,
+        retailer,
+        storeLocation: location,
+        datePhotoTaken: date,
+        imageType: imgTypesDisplay.join(', '),
+        secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
+        products: products.join(', '),
+        comments,
+        filesUploaded: filesData.map(f => f.name).join(', '),
+        prefix,
+        files: filesData
+      };
 
-      const summaryBlob = new Blob([summary], { type: 'text/plain' });
-      const summaryPath = isMultiple ? folderPath + '/' + prefix + '_summary.txt' : DROPBOX_FOLDER + '/' + slugify(country) + '/' + prefix + '_summary.txt';
-      await uploadToDropbox(new File([summaryBlob], prefix + '_summary.txt'), summaryPath);
-      done++; showProgress(100);
-
-      // Send to Google Sheets
-      await fetch(SHEETS_URL, {
-        method: 'POST', mode: 'no-cors',
+      const res = await fetch(SHEETS_URL, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dateSubmitted: new Date().toLocaleString(),
-          country, retailer,
-          storeLocation: location,
-          datePhotoTaken: date,
-          imageType: imgTypesDisplay.join(', '),
-          secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
-          products: products.join(', '),
-          comments,
-          filesUploaded: Array.from(files).map((f, i) => prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join(', '),
-          imageLinks: imageLinks.join(', ')
-        })
+        body: JSON.stringify(payload)
       });
 
+      const result = await res.json();
+      if (result.result === 'error') throw new Error(result.error);
+
+      showProgress(100);
       document.getElementById('successMsg').style.display = 'block';
       resetForm();
     } catch (err) {
