@@ -1,166 +1,393 @@
-function doPost(e) {
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var data = JSON.parse(e.postData.contents);
-    
-    var imageLinks = [];
-    
-    if (data.files && data.files.length > 0) {
-      var rootFolder = DriveApp.getFolderById('1V25aTfceGmLRvoAIBQoKDxa1qR4WsDxk');
-      
-      var countryFolders = rootFolder.getFoldersByName(data.country);
-      var countryFolder = countryFolders.hasNext() ? countryFolders.next() : rootFolder.createFolder(data.country);
-      
-      var isMultiple = data.files.length > 1;
-      var targetFolder = countryFolder;
-      
-      if (isMultiple) {
-        var subFolders = countryFolder.getFoldersByName(data.prefix);
-        targetFolder = subFolders.hasNext() ? subFolders.next() : countryFolder.createFolder(data.prefix);
-      }
-      
-      data.files.forEach(function(file) {
-        var blob = Utilities.newBlob(Utilities.base64Decode(file.data), file.type, file.name);
-        var uploaded = targetFolder.createFile(blob);
-        uploaded.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        if (!isMultiple) imageLinks.push(uploaded.getUrl());
-      });
-      
-      if (isMultiple) {
-        targetFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        imageLinks.push(targetFolder.getUrl());
-      }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sundae Photo Upload</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+    .form-wrap { max-width: 680px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a1a; }
+    .section-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+    .section-title { font-size: 12px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label { display: block; font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 6px; }
+    input[type="text"], input[type="date"], textarea, select {
+      width: 100%; font-size: 14px; font-family: inherit;
+      background: #f9f9f8; border: 0.5px solid rgba(0,0,0,0.2);
+      border-radius: 8px; color: #1a1a1a; padding: 8px 12px;
+      outline: none; transition: border-color 0.15s;
     }
-    
-    sheet.appendRow([
-      data.dateSubmitted,
-      data.country,
-      data.retailer,
-      data.storeLocation,
-      data.datePhotoTaken,
-      data.imageType,
-      data.secondaryPlacementType,
-      data.products,
-      data.comments,
-      data.filesUploaded,
-      imageLinks.join(', ')
-    ]);
-    highlightNewRow();
-    updateDashboard();
+    input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus { border-color: rgba(0,0,0,0.5); }
+    textarea { resize: vertical; min-height: 80px; }
+    .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
+    .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+    .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1a1a1a; cursor: pointer; }
+    .checkbox-item input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #3a7bd5; flex-shrink: 0; }
+    .sub-field { margin-top: 8px; margin-left: 23px; }
+    .drop-zone { border: 1.5px dashed rgba(0,0,0,0.2); border-radius: 12px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: background 0.15s; }
+    .drop-zone:hover, .drop-zone.dragover { background: #f5f5f3; }
+    .drop-zone-icon { font-size: 28px; margin-bottom: 8px; }
+    .drop-zone p { margin: 4px 0; font-size: 14px; color: #666; }
+    .drop-zone .hint { font-size: 12px; color: #aaa; }
+    .btn-row { display: flex; gap: 10px; margin-top: 1rem; justify-content: flex-end; }
+    .btn-choose { font-size: 14px; font-weight: 500; padding: 8px 18px; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 8px; background: #f5f5f3; color: #1a1a1a; cursor: pointer; }
+    .btn-upload { font-size: 14px; font-weight: 500; padding: 8px 22px; border: none; border-radius: 8px; background: #1a1a1a; color: #fff; cursor: pointer; }
+    .btn-choose:hover { background: #ebebea; }
+    .btn-upload:hover { background: #333; }
+    .btn-upload:disabled { background: #999; cursor: not-allowed; }
+    .file-list { margin-top: 1rem; display: none; }
+    .file-list-title { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 8px; }
+    .file-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f9f9f8; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 6px; }
+    .file-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: 12px; color: #888; margin-top: 2px; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+    .badge-pdf { background: #faece7; color: #993c1d; }
+    .badge-img { background: #e6f1fb; color: #185fa5; }
+    .badge-txt { background: #eaf3de; color: #3b6d11; }
+    .progress-bar-wrap { display: none; margin-top: 10px; background: #eee; border-radius: 99px; height: 6px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #3a7bd5; border-radius: 99px; width: 0%; transition: width 0.2s; }
+    .status-msg { display: none; font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-top: 10px; }
+    .status-success { background: #eaf3de; color: #3b6d11; border: 0.5px solid #c0dd97; }
+    .status-error { background: #fcebeb; color: #a32d2d; border: 0.5px solid #f7c1c1; }
+    .required { color: #c0392b; margin-left: 2px; }
+    @media (max-width: 480px) { .checkbox-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="form-wrap">
+  <h1>Sundae Photo Upload</h1>
 
-    return ContentService.createTextOutput(JSON.stringify({ result: 'success', links: imageLinks }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+  <!-- Type of image -->
+  <div class="section-card">
+    <p class="section-title">Type of image</p>
+    <div class="checkbox-list">
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="Sundae on-shelf"> Sundae on-shelf
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="Sundae secondary placement display" id="secondaryCheck"> Sundae secondary placement display
+      </label>
+      <div id="secondaryOptions" style="display:none;" class="sub-field">
+        <select id="secondaryType">
+          <option value="">— Select placement type —</option>
+          <option value="endcap">End-cap</option>
+          <option value="sidekick">Sidekick</option>
+          <option value="aislefin">Aisle fin</option>
+          <option value="other">Other</option>
+        </select>
+        <div id="secondaryOtherBox" style="display:none; margin-top:6px;">
+          <input type="text" id="secondaryOther" placeholder="Please describe the placement type…">
+        </div>
+      </div>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="Competitor product"> Competitor product
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" name="img_type" value="other" id="otherCheck"> Other
+      </label>
+      <div id="otherCommentBox" style="display:none;" class="sub-field">
+        <input type="text" id="otherComment" placeholder="Please describe the image type…">
+      </div>
+    </div>
+  </div>
+
+  <!-- Store details -->
+  <div class="section-card">
+    <p class="section-title">Store details</p>
+    <div class="field">
+      <label class="field-label">Country <span class="required">*</span></label>
+      <select id="country">
+        <option value="">— Select your country —</option>
+        <option value="AUS">Australia</option>
+        <option value="NZ">New Zealand</option>
+        <option value="UK">United Kingdom</option>
+        <option value="USA">USA</option>
+        <option value="IRE">Ireland</option>
+        <option value="SCA">Scandinavia</option>
+        <option value="NED">Netherlands</option>
+        <option value="BEL">Belgium</option>
+        <option value="THA">Thailand</option>
+        <option value="SWI">Switzerland</option>
+        <option value="POL">Poland</option>
+        <option value="BAL">Baltics</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">Name of retailer <span class="required">*</span></label>
+      <input type="text" id="retailer" placeholder="e.g. Boots, Superdrug, Tesco">
+    </div>
+    <div class="field">
+      <label class="field-label">Store location <span class="required">*</span></label>
+      <input type="text" id="location" placeholder="e.g. Oxford Street London">
+    </div>
+    <div class="field">
+      <label class="field-label">Date photo was taken <span class="required">*</span></label>
+      <input type="date" id="photo_date">
+    </div>
+  </div>
+
+  <!-- Products on display -->
+  <div class="section-card">
+    <p class="section-title">Product on display</p>
+    <div class="checkbox-grid">
+      <label class="checkbox-item"><input type="checkbox" name="product" value="ShowerFoams"> Shower Foams</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="BodyMists"> Body Mists</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="BodyWhips"> Body Whips</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="Suncare"> Suncare</label>
+      <label class="checkbox-item"><input type="checkbox" name="product" value="KidsCollection"> Kids Collection</label>
+    </div>
+  </div>
+
+  <!-- Comments -->
+  <div class="section-card">
+    <p class="section-title">Additional comments / notes</p>
+    <textarea id="comments" placeholder="Any extra context, observations, or notes…"></textarea>
+  </div>
+
+  <!-- File upload -->
+  <div class="section-card">
+    <p class="section-title">Upload photos</p>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-zone-icon">📷</div>
+      <p>Drop files here or click to browse</p>
+      <p class="hint">Accepted: JPG, PNG, GIF, PDF, TXT — multiple files allowed</p>
+    </div>
+    <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif,.pdf,.txt" multiple style="display:none">
+    <div class="file-list" id="fileList">
+      <p class="file-list-title">Selected files</p>
+      <div id="fileItems"></div>
+    </div>
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-choose" onclick="document.getElementById('fileInput').click()">Choose files</button>
+      <button class="btn-upload" id="uploadBtn" onclick="handleUpload()">Upload</button>
+    </div>
+    <div class="status-msg status-success" id="successMsg">✓ Submission uploaded successfully!</div>
+    <div class="status-msg status-error" id="errorMsg"></div>
+  </div>
+</div>
+
+<script>
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwQBv9qjekxX2-uEnN34aB8ZjW7GgksHUe8q1qlksG_jk4nprYz7LTl2tBvRabdPrX_/exec';
+
+  // Secondary placement toggle
+  document.getElementById('secondaryCheck').addEventListener('change', function() {
+    document.getElementById('secondaryOptions').style.display = this.checked ? 'block' : 'none';
+    if (!this.checked) {
+      document.getElementById('secondaryType').value = '';
+      document.getElementById('secondaryOtherBox').style.display = 'none';
+      document.getElementById('secondaryOther').value = '';
+    }
+  });
+
+  document.getElementById('secondaryType').addEventListener('change', function() {
+    document.getElementById('secondaryOtherBox').style.display = this.value === 'other' ? 'block' : 'none';
+    if (this.value !== 'other') document.getElementById('secondaryOther').value = '';
+  });
+
+  // Other image type toggle
+  document.getElementById('otherCheck').addEventListener('change', function() {
+    document.getElementById('otherCommentBox').style.display = this.checked ? 'block' : 'none';
+    if (!this.checked) document.getElementById('otherComment').value = '';
+  });
+
+  // File preview
+  const fileInput = document.getElementById('fileInput');
+  const dropZone = document.getElementById('dropZone');
+
+  function formatSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(2) + ' MB';
   }
-}
 
-function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ result: 'ok' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+  function getBadge(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return '<span class="badge badge-pdf">PDF</span>';
+    if (['jpg','jpeg','png','gif'].includes(ext)) return '<span class="badge badge-img">Image</span>';
+    if (ext === 'txt') return '<span class="badge badge-txt">TXT</span>';
+    return '';
+  }
 
-function highlightNewRow() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var lastRow = sheet.getLastRow();
-  var range = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn());
-  range.setBackground('#fff3cd');
-}
+  function getIconStyle(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'background:#faece7;color:#993c1d;';
+    if (['jpg','jpeg','png','gif'].includes(ext)) return 'background:#e6f1fb;color:#185fa5;';
+    if (ext === 'txt') return 'background:#eaf3de;color:#3b6d11;';
+    return 'background:#eee;color:#666;';
+  }
 
-function updateDashboard() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var dataSheet = ss.getSheets()[0];
-  var dashSheet = ss.getSheetByName('Dashboard');
-  var data = dataSheet.getDataRange().getValues();
+  function getIconLabel(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif'].includes(ext)) return 'IMG';
+    return ext.toUpperCase().slice(0, 3);
+  }
 
-  dashSheet.clearContents();
-
-  var charts = dashSheet.getCharts();
-  charts.forEach(function(chart) { dashSheet.removeChart(chart); });
-
-  var total = data.length - 1;
-  var countries = {}, retailers = {}, imageTypes = {}, products = {};
-
-  for (var i = 1; i < data.length; i++) {
-    var country = data[i][1].toString().trim().toLowerCase().replace(/\b\w/g, function(l){ return l.toUpperCase(); });
-    var retailer = data[i][2].toString().trim().toLowerCase().replace(/\b\w/g, function(l){ return l.toUpperCase(); });
-    var imageType = data[i][5].toString().trim().toLowerCase().replace(/\b\w/g, function(l){ return l.toUpperCase(); });
-    var productList = data[i][7] ? data[i][7].toString().split(', ') : [];
-
-    countries[country] = (countries[country] || 0) + 1;
-    retailers[retailer] = (retailers[retailer] || 0) + 1;
-    imageTypes[imageType] = (imageTypes[imageType] || 0) + 1;
-    productList.forEach(function(p) {
-      if (p) {
-        var normP = p.trim().toLowerCase().replace(/\b\w/g, function(l){ return l.toUpperCase(); });
-        products[normP] = (products[normP] || 0) + 1;
-      }
+  function renderFiles(files) {
+    const list = document.getElementById('fileList');
+    const items = document.getElementById('fileItems');
+    items.innerHTML = '';
+    if (!files || !files.length) { list.style.display = 'none'; return; }
+    list.style.display = 'block';
+    Array.from(files).forEach(f => {
+      const d = document.createElement('div');
+      d.className = 'file-item';
+      d.innerHTML = `<div class="file-icon" style="${getIconStyle(f.name)}">${getIconLabel(f.name)}</div>
+        <div class="file-info">
+          <div class="file-name">${f.name}${getBadge(f.name)}</div>
+          <div class="file-meta">${formatSize(f.size)} · ${f.type || 'unknown type'}</div>
+        </div>`;
+      items.appendChild(d);
     });
   }
 
-  dashSheet.getRange('A1').setValue('SUNDAE IMAGERY DASHBOARD');
-  dashSheet.getRange('A2').setValue('Last updated: ' + new Date().toLocaleString());
-  dashSheet.getRange('A4').setValue('Total submissions');
-  dashSheet.getRange('B4').setValue(total);
+  fileInput.addEventListener('change', () => renderFiles(fileInput.files));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; renderFiles(e.dataTransfer.files); }
+  });
 
-  dashSheet.getRange('A6').setValue('BY COUNTRY');
-  var countryRow = 7;
-  for (var c in countries) { dashSheet.getRange(countryRow, 1).setValue(c); dashSheet.getRange(countryRow, 2).setValue(countries[c]); countryRow++; }
+  function slugify(str) {
+    return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+  }
 
-  dashSheet.getRange('D6').setValue('BY RETAILER');
-  var retailerRow = 7;
-  for (var r in retailers) { dashSheet.getRange(retailerRow, 4).setValue(r); dashSheet.getRange(retailerRow, 5).setValue(retailers[r]); retailerRow++; }
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
-  dashSheet.getRange('A' + (countryRow + 2)).setValue('BY IMAGE TYPE');
-  var imgRow = countryRow + 3;
-  for (var t in imageTypes) { dashSheet.getRange(imgRow, 1).setValue(t); dashSheet.getRange(imgRow, 2).setValue(imageTypes[t]); imgRow++; }
+  async function handleUpload() {
+    const country = document.getElementById('country').value;
+    const retailer = document.getElementById('retailer').value.trim();
+    const location = document.getElementById('location').value.trim();
+    const date = document.getElementById('photo_date').value;
+    const comments = document.getElementById('comments').value.trim();
+    const files = fileInput.files;
+    const imgTypeChecked = [...document.querySelectorAll('input[name="img_type"]:checked')];
+    const otherChecked = document.getElementById('otherCheck').checked;
+    const otherComment = document.getElementById('otherComment').value.trim();
+    const secondaryChecked = document.getElementById('secondaryCheck').checked;
+    const secondaryType = document.getElementById('secondaryType').value;
+    const secondaryOther = document.getElementById('secondaryOther').value.trim();
+    const products = [...document.querySelectorAll('input[name="product"]:checked')].map(c => c.value);
 
-  dashSheet.getRange('D' + (imgRow + 2)).setValue('BY PRODUCT');
-  var prodRow = imgRow + 3;
-  for (var p in products) { dashSheet.getRange(prodRow, 4).setValue(p); dashSheet.getRange(prodRow, 5).setValue(products[p]); prodRow++; }
+    // Validation
+    if (!country) return showError('Please select a country.');
+    if (!retailer || !location || !date) return showError('Please fill in all required store details.');
+    if (imgTypeChecked.length === 0) return showError('Please select at least one image type.');
+    if (secondaryChecked && !secondaryType) return showError('Please select a secondary placement type.');
+    if (secondaryChecked && secondaryType === 'other' && !secondaryOther) return showError('Please describe the secondary placement type.');
+    if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
+    if (!files || !files.length) return showError('Please select at least one file to upload.');
 
-  var countryRange = dashSheet.getRange(6, 1, countryRow - 6, 2);
-  var countryChart = dashSheet.newChart()
-    .setChartType(Charts.ChartType.PIE)
-    .addRange(countryRange)
-    .setPosition(6, 7, 0, 0)
-    .setOption('title', 'Submissions by Country')
-    .setOption('width', 400)
-    .setOption('height', 300)
-    .build();
-  dashSheet.insertChart(countryChart);
+    // Build image type codes
+    const imgTypeMap = { 'Sundae on-shelf': 'shelf', 'Competitor product': 'competitor', 'other': 'other' };
+    const imgTypeCodes = imgTypeChecked.map(c => {
+      if (c.value === 'Sundae secondary placement display') {
+        const secLabel = secondaryType === 'other' ? slugify(secondaryOther) : secondaryType;
+        return 'secondary' + (secLabel ? '_' + secLabel : '');
+      }
+      return imgTypeMap[c.value] || 'other';
+    }).join('_');
 
-  var retailerRange = dashSheet.getRange(6, 4, retailerRow - 6, 2);
-  var retailerChart = dashSheet.newChart()
-    .setChartType(Charts.ChartType.BAR)
-    .addRange(retailerRange)
-    .setPosition(18, 7, 0, 0)
-    .setOption('title', 'Submissions by Retailer')
-    .setOption('width', 400)
-    .setOption('height', 300)
-    .build();
-  dashSheet.insertChart(retailerChart);
+    const imgTypesDisplay = imgTypeChecked.map(c => {
+      if (c.value === 'Sundae secondary placement display') {
+        const secLabel = secondaryType === 'other' ? secondaryOther : secondaryType;
+        return 'Sundae secondary placement display' + (secLabel ? ' (' + secLabel + ')' : '');
+      }
+      return c.value === 'other' ? 'Other: ' + otherComment : c.value;
+    });
 
-  var imgTypeRange = dashSheet.getRange(countryRow + 2, 1, imgRow - countryRow - 2, 2);
-  var imgChart = dashSheet.newChart()
-    .setChartType(Charts.ChartType.BAR)
-    .addRange(imgTypeRange)
-    .setPosition(6, 13, 0, 0)
-    .setOption('title', 'Submissions by Image Type')
-    .setOption('width', 400)
-    .setOption('height', 300)
-    .build();
-  dashSheet.insertChart(imgChart);
+    const productCodes = products.join('_') || 'NoProduct';
+    const prefix = [slugify(country), slugify(retailer), slugify(location), productCodes, imgTypeCodes, slugify(date)].join('_');
 
-  var productRange = dashSheet.getRange(imgRow + 2, 4, prodRow - imgRow - 2, 2);
-  var productChart = dashSheet.newChart()
-    .setChartType(Charts.ChartType.BAR)
-    .addRange(productRange)
-    .setPosition(18, 13, 0, 0)
-    .setOption('title', 'Submissions by Product')
-    .setOption('width', 400)
-    .setOption('height', 300)
-    .build();
-  dashSheet.insertChart(productChart);
-}
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true; btn.textContent = 'Uploading…';
+    hideMessages(); showProgress(10);
+
+    try {
+      // Convert files to base64
+      const filesData = [];
+      let fileIndex = 1;
+      for (const file of Array.from(files)) {
+        const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
+        const newName = prefix + '_' + fileIndex + (ext ? '.' + ext : '');
+        const base64 = await fileToBase64(file);
+        filesData.push({ name: newName, type: file.type, data: base64 });
+        fileIndex++;
+      }
+
+      showProgress(50);
+
+      // Send everything to Apps Script
+      const payload = {
+        dateSubmitted: new Date().toLocaleString(),
+        country,
+        retailer,
+        storeLocation: location,
+        datePhotoTaken: date,
+        imageType: imgTypesDisplay.join(', '),
+        secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
+        products: products.join(', '),
+        comments,
+        filesUploaded: filesData.map(f => f.name).join(', '),
+        prefix,
+        files: filesData
+      };
+
+      const res = await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await res.json();
+      if (result.result === 'error') throw new Error(result.error);
+
+      showProgress(100);
+      document.getElementById('successMsg').style.display = 'block';
+      resetForm();
+    } catch (err) {
+      showError('Upload failed: ' + err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Upload';
+      setTimeout(() => hideProgress(), 1500);
+    }
+  }
+
+  function showProgress(pct) { document.getElementById('progressWrap').style.display = 'block'; document.getElementById('progressBar').style.width = pct + '%'; }
+  function hideProgress() { document.getElementById('progressWrap').style.display = 'none'; }
+  function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = '✕ ' + msg; el.style.display = 'block'; }
+  function hideMessages() { document.getElementById('successMsg').style.display = 'none'; document.getElementById('errorMsg').style.display = 'none'; }
+
+  function resetForm() {
+    document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    document.getElementById('secondaryOptions').style.display = 'none';
+    document.getElementById('secondaryType').value = '';
+    document.getElementById('secondaryOtherBox').style.display = 'none';
+    document.getElementById('secondaryOther').value = '';
+    document.getElementById('otherCommentBox').style.display = 'none';
+    document.getElementById('otherComment').value = '';
+    document.getElementById('country').value = '';
+    document.getElementById('retailer').value = '';
+    document.getElementById('location').value = '';
+    document.getElementById('photo_date').value = '';
+    document.getElementById('comments').value = '';
+    fileInput.value = ''; renderFiles(null);
+  }
+</script>
+</body>
+</html>
