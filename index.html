@@ -377,7 +377,7 @@
       let fileIndex = 1;
       const imageLinks = [];
       const isMultiple = files.length > 1;
-      const folderPath = DROPBOX_FOLDER + '/' + slugify(country) + '/' + prefix;
+      const folderPath = DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + prefix;
 
       for (const file of Array.from(files)) {
         const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
