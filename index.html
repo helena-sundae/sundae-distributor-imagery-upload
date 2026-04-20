@@ -175,7 +175,7 @@
 </div>
 
 <script>
-  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwsEdKoKV8S0-pxhubsRmfEmD3F564x7IAN6S2H-UBpzzROOF6KoYWwJGsNR-kLzgY0/exec';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwRkgJbKW69k02fmbAjQJegETK6wFY5qladQedYTnDzh_K2n8Valc8N37JI0rcrjak/exec';
 
   // Secondary placement toggle
   document.getElementById('secondaryCheck').addEventListener('change', function() {
@@ -348,11 +348,13 @@
         files: filesData
       };
 
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(payload));
+
       const res = await fetch(SHEETS_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
       showProgress(100);
