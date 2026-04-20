@@ -329,7 +329,7 @@
     if (secondaryChecked && secondaryType === 'other' && !secondaryOther) return showError('Please describe the secondary placement type.');
     if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
     if (!files || !files.length) return showError('Please select at least one file to upload.');
-    if (DROPBOX_TOKEN === 'PASTE_YOUR_DROPBOX_ACCESS_TOKEN_HERE') return showError('No Dropbox token found. Please add your access token.');
+
 
     const imgTypeMap = { 'Sundae on-shelf': 'shelf', 'Competitor product': 'competitor', 'other': 'other' };
     const imgTypeCodes = imgTypeChecked.map(c => {
