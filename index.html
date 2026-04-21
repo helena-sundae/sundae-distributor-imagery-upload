@@ -133,7 +133,7 @@
 
   <!-- Products on display -->
   <div class="section-card">
-    <p class="section-title">Product on display</p>
+    <p class="section-title">Product on display <span class="required">*</span></p>
     <div class="checkbox-grid">
       <label class="checkbox-item"><input type="checkbox" name="product" value="ShowerFoams"> Shower Foams</label>
       <label class="checkbox-item"><input type="checkbox" name="product" value="BodyMists"> Body Mists</label>
@@ -141,6 +141,12 @@
       <label class="checkbox-item"><input type="checkbox" name="product" value="Suncare"> Suncare</label>
       <label class="checkbox-item"><input type="checkbox" name="product" value="KidsCollection"> Kids Collection</label>
     </div>
+  </div>
+
+  <!-- Image description -->
+  <div class="section-card">
+    <p class="section-title">Image description <span class="required">*</span></p>
+    <textarea id="imageDescription" placeholder="Please provide a brief description of your image(s) e.g. Cocktail Collection on a sidecap"></textarea>
   </div>
 
   <!-- Comments -->
@@ -182,7 +188,7 @@
   const DROPBOX_APP_KEY = 'rfmiw732pag3axo';
   const DROPBOX_APP_SECRET = 'pr6z68ammp8mmwu';
   const DROPBOX_FOLDER = '';
-  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbye4-FG6WYNYFAY8w2JqBKSw9vME0bloy4e-quTpY6dSjbq6wuwFMWRcGSYM4BKAUGt/exec';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwDbu43M3SIr9Ga0l_3ZBnw_0O8EPYSFZXzWRfTsCnvik721sMDRrE4PsivvFoQFeen/exec';
 
   let dropboxAccessToken = null;
 
@@ -309,17 +315,35 @@
   }
 
   async function getDropboxLink(path) {
-    const res = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + dropboxAccessToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, settings: { requested_visibility: 'public' } })
-    });
-    const data = await res.json();
-    if (data.url) return data.url.replace('?dl=0', '?raw=1');
-    if (data.error && data.error['.tag'] === 'shared_link_already_exists') {
-      return data.error.shared_link_already_exists.metadata.url.replace('?dl=0', '?raw=1');
+    try {
+      const res = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + dropboxAccessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, settings: { requested_visibility: 'public' } })
+      });
+      const data = await res.json();
+      if (data.url) return data.url.replace('?dl=0', '?raw=1');
+      if (data.error && data.error['.tag'] === 'shared_link_already_exists') {
+        const existing = data.error.shared_link_already_exists;
+        if (existing && existing.metadata && existing.metadata.url) {
+          return existing.metadata.url.replace('?dl=0', '?raw=1');
+        }
+        // Fetch existing link if metadata not returned
+        const listRes = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + dropboxAccessToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, direct_only: true })
+        });
+        const listData = await listRes.json();
+        if (listData.links && listData.links.length > 0) {
+          return listData.links[0].url.replace('?dl=0', '?raw=1');
+        }
+      }
+      return null;
+    } catch(err) {
+      console.error('getDropboxLink error:', err);
+      return null;
     }
-    return null;
   }
 
   async function handleUpload() {
@@ -327,6 +351,7 @@
     const retailer = document.getElementById('retailer').value.trim();
     const location = document.getElementById('location').value.trim();
     const date = document.getElementById('photo_date').value;
+    const imageDescription = document.getElementById('imageDescription').value.trim();
     const comments = document.getElementById('comments').value.trim();
     const files = selectedFiles;
     const imgTypeChecked = [...document.querySelectorAll('input[name="img_type"]:checked')];
@@ -343,6 +368,8 @@
     if (secondaryChecked && !secondaryType) return showError('Please select a secondary placement type.');
     if (secondaryChecked && secondaryType === 'other' && !secondaryOther) return showError('Please describe the secondary placement type.');
     if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
+    if (products.length === 0) return showError('Please select at least one product on display.');
+    if (!imageDescription) return showError('Please provide an image description.');
     if (!files || !files.length) return showError('Please select at least one file to upload.');
 
 
@@ -432,6 +459,7 @@
           imageType: imgTypesDisplay.join(', '),
           secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
           products: products.join(', '),
+          imageDescription,
           comments,
           filesUploaded: Array.from(files).map((f, i) => prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join(', '),
           imageLinks: imageLinks.join(', ')
