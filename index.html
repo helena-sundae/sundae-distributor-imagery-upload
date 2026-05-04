@@ -296,7 +296,12 @@
     }
   });
 
-  function slugify(str) {
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+    return dateStr;
+  }
     return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
   }
 
@@ -455,7 +460,7 @@
           dateSubmitted: new Date().toLocaleString(),
           country, retailer,
           storeLocation: location,
-          datePhotoTaken: date,
+          datePhotoTaken: formatDate(date),
           imageType: imgTypesDisplay.join(', '),
           secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
           products: products.join(', '),
@@ -493,6 +498,7 @@
     document.getElementById('retailer').value = '';
     document.getElementById('location').value = '';
     document.getElementById('photo_date').value = '';
+    document.getElementById('imageDescription').value = '';
     document.getElementById('comments').value = '';
     fileInput.value = ''; selectedFiles = []; renderFiles(null);
   }
