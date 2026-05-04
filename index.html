@@ -300,7 +300,15 @@
     return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
   }
 
-  function formatDate(dateStr) {
+  function formatDateTime() {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + min;
+  }
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
@@ -456,7 +464,7 @@
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dateSubmitted: new Date().toLocaleString(),
+          dateSubmitted: formatDateTime(),
           country, retailer,
           storeLocation: location,
           datePhotoTaken: formatDate(date),
