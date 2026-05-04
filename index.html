@@ -62,16 +62,11 @@
 <div class="form-wrap">
   <h1>Sundae Photo Upload</h1>
 
-  <!-- Type of image -->
   <div class="section-card">
     <p class="section-title">Type of image <span class="required">*</span></p>
     <div class="checkbox-list">
-      <label class="checkbox-item">
-        <input type="checkbox" name="img_type" value="Sundae on-shelf"> Sundae on-shelf
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" name="img_type" value="Sundae secondary placement display" id="secondaryCheck"> Sundae secondary placement display
-      </label>
+      <label class="checkbox-item"><input type="checkbox" name="img_type" value="Sundae on-shelf"> Sundae on-shelf</label>
+      <label class="checkbox-item"><input type="checkbox" name="img_type" value="Sundae secondary placement display" id="secondaryCheck"> Sundae secondary placement display</label>
       <div id="secondaryOptions" style="display:none;" class="sub-field">
         <select id="secondaryType">
           <option value="">— Select placement type —</option>
@@ -84,19 +79,14 @@
           <input type="text" id="secondaryOther" placeholder="Please describe the placement type…">
         </div>
       </div>
-      <label class="checkbox-item">
-        <input type="checkbox" name="img_type" value="Competitor product"> Competitor product
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" name="img_type" value="other" id="otherCheck"> Other
-      </label>
+      <label class="checkbox-item"><input type="checkbox" name="img_type" value="Competitor product"> Competitor product</label>
+      <label class="checkbox-item"><input type="checkbox" name="img_type" value="other" id="otherCheck"> Other</label>
       <div id="otherCommentBox" style="display:none;" class="sub-field">
         <input type="text" id="otherComment" placeholder="Please describe the image type…">
       </div>
     </div>
   </div>
 
-  <!-- Store details -->
   <div class="section-card">
     <p class="section-title">Store details</p>
     <div class="field">
@@ -131,7 +121,6 @@
     </div>
   </div>
 
-  <!-- Products on display -->
   <div class="section-card">
     <p class="section-title">Product on display <span class="required">*</span></p>
     <div class="checkbox-grid">
@@ -143,19 +132,16 @@
     </div>
   </div>
 
-  <!-- Image description -->
   <div class="section-card">
     <p class="section-title">Image description <span class="required">*</span></p>
     <textarea id="imageDescription" placeholder="Please provide a brief description of your image(s) e.g. Cocktail Collection launch, Mother's Day gift sets, new shelf reset February 2027..."></textarea>
   </div>
 
-  <!-- Comments -->
   <div class="section-card">
     <p class="section-title">Additional comments / notes</p>
     <textarea id="comments" placeholder="Any extra context, observations, or notes…"></textarea>
   </div>
 
-  <!-- File upload -->
   <div class="section-card">
     <p class="section-title">Upload photos</p>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
@@ -181,9 +167,6 @@
 </div>
 
 <script>
-  // ============================================================
-  // DROPBOX CREDENTIALS — fill in App Key and App Secret
-  // ============================================================
   const DROPBOX_REFRESH_TOKEN = 'Ycoj9KpNuTwAAAAAAAAAAS5p1XvysVREJZ7ix5fF65MEQDEkqfX54mmCnU-oB_t5';
   const DROPBOX_APP_KEY = 'rfmiw732pag3axo';
   const DROPBOX_APP_SECRET = 'pr6z68ammp8mmwu';
@@ -193,40 +176,26 @@
   let dropboxAccessToken = null;
   let selectedFiles = [];
 
-  async function getDropboxToken() {
-    const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'grant_type=refresh_token&refresh_token=' + DROPBOX_REFRESH_TOKEN + '&client_id=' + DROPBOX_APP_KEY + '&client_secret=' + DROPBOX_APP_SECRET
-    });
-    const data = await res.json();
-    if (!data.access_token) throw new Error('Failed to get Dropbox token');
-    dropboxAccessToken = data.access_token;
-    return dropboxAccessToken;
+  function formatDateTime() {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + min;
   }
 
-  // Secondary placement toggle
-  document.getElementById('secondaryCheck').addEventListener('change', function() {
-    document.getElementById('secondaryOptions').style.display = this.checked ? 'block' : 'none';
-    if (!this.checked) {
-      document.getElementById('secondaryType').value = '';
-      document.getElementById('secondaryOtherBox').style.display = 'none';
-      document.getElementById('secondaryOther').value = '';
-    }
-  });
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+    return dateStr;
+  }
 
-  document.getElementById('secondaryType').addEventListener('change', function() {
-    document.getElementById('secondaryOtherBox').style.display = this.value === 'other' ? 'block' : 'none';
-    if (this.value !== 'other') document.getElementById('secondaryOther').value = '';
-  });
-
-  document.getElementById('otherCheck').addEventListener('change', function() {
-    document.getElementById('otherCommentBox').style.display = this.checked ? 'block' : 'none';
-    if (!this.checked) document.getElementById('otherComment').value = '';
-  });
-
-  const fileInput = document.getElementById('fileInput');
-  const dropZone = document.getElementById('dropZone');
+  function slugify(str) {
+    return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+  }
 
   function formatSize(b) {
     if (b < 1024) return b + ' B';
@@ -280,6 +249,9 @@
     renderFiles(selectedFiles);
   }
 
+  const fileInput = document.getElementById('fileInput');
+  const dropZone = document.getElementById('dropZone');
+
   fileInput.addEventListener('change', () => {
     selectedFiles = [...selectedFiles, ...Array.from(fileInput.files)];
     renderFiles(selectedFiles);
@@ -296,23 +268,34 @@
     }
   });
 
-  function slugify(str) {
-    return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
-  }
+  document.getElementById('secondaryCheck').addEventListener('change', function() {
+    document.getElementById('secondaryOptions').style.display = this.checked ? 'block' : 'none';
+    if (!this.checked) {
+      document.getElementById('secondaryType').value = '';
+      document.getElementById('secondaryOtherBox').style.display = 'none';
+      document.getElementById('secondaryOther').value = '';
+    }
+  });
 
-  function formatDateTime() {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yyyy = now.getFullYear();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + min;
-  }
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
-    return dateStr;
+  document.getElementById('secondaryType').addEventListener('change', function() {
+    document.getElementById('secondaryOtherBox').style.display = this.value === 'other' ? 'block' : 'none';
+    if (this.value !== 'other') document.getElementById('secondaryOther').value = '';
+  });
+
+  document.getElementById('otherCheck').addEventListener('change', function() {
+    document.getElementById('otherCommentBox').style.display = this.checked ? 'block' : 'none';
+    if (!this.checked) document.getElementById('otherComment').value = '';
+  });
+
+  async function getDropboxToken() {
+    const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + DROPBOX_REFRESH_TOKEN + '&client_id=' + DROPBOX_APP_KEY + '&client_secret=' + DROPBOX_APP_SECRET
+    });
+    const data = await res.json();
+    if (!data.access_token) throw new Error('Failed to get Dropbox token');
+    dropboxAccessToken = data.access_token;
   }
 
   async function uploadToDropbox(file, path) {
@@ -440,13 +423,13 @@
       const summary = [
         'SUNDAE PHOTO SUBMISSION SUMMARY',
         '================================',
-        'Submitted: ' + new Date().toLocaleString(),
+        'Submitted: ' + formatDateTime(),
         '', 'TYPE OF IMAGE:', imgTypesDisplay.map(t => '  - ' + t).join('\n'),
         '', 'STORE DETAILS:',
         '  Country:        ' + country,
         '  Retailer:       ' + retailer,
         '  Store location: ' + location,
-        '  Date taken:     ' + date,
+        '  Date taken:     ' + formatDate(date),
         '', 'PRODUCTS ON DISPLAY:', products.length ? products.map(p => '  - ' + p).join('\n') : '  None selected',
         '', 'IMAGE DESCRIPTION:', imageDescription,
         '', 'ADDITIONAL COMMENTS:', comments || '  None',
