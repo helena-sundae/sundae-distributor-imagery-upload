@@ -64,7 +64,7 @@
 
   <!-- Type of image -->
   <div class="section-card">
-    <p class="section-title">Type of image</p>
+    <p class="section-title">Type of image <span class="required">*</span></p>
     <div class="checkbox-list">
       <label class="checkbox-item">
         <input type="checkbox" name="img_type" value="Sundae on-shelf"> Sundae on-shelf
@@ -182,7 +182,7 @@
 
 <script>
   // ============================================================
-  // DROPBOX CREDENTIALS — fill in all three values
+  // DROPBOX CREDENTIALS — fill in App Key and App Secret
   // ============================================================
   const DROPBOX_REFRESH_TOKEN = 'Ycoj9KpNuTwAAAAAAAAAAS5p1XvysVREJZ7ix5fF65MEQDEkqfX54mmCnU-oB_t5';
   const DROPBOX_APP_KEY = 'rfmiw732pag3axo';
@@ -191,6 +191,7 @@
   const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwDbu43M3SIr9Ga0l_3ZBnw_0O8EPYSFZXzWRfTsCnvik721sMDRrE4PsivvFoQFeen/exec';
 
   let dropboxAccessToken = null;
+  let selectedFiles = [];
 
   async function getDropboxToken() {
     const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
@@ -255,8 +256,6 @@
     return ext.toUpperCase().slice(0, 3);
   }
 
-  let selectedFiles = [];
-
   function renderFiles(files) {
     const list = document.getElementById('fileList');
     const items = document.getElementById('fileItems');
@@ -286,6 +285,7 @@
     renderFiles(selectedFiles);
     fileInput.value = '';
   });
+
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
   dropZone.addEventListener('drop', e => {
@@ -296,13 +296,15 @@
     }
   });
 
+  function slugify(str) {
+    return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
+  }
+
   function formatDate(dateStr) {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
     return dateStr;
-  }
-    return str.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '');
   }
 
   async function uploadToDropbox(file, path) {
@@ -333,7 +335,6 @@
         if (existing && existing.metadata && existing.metadata.url) {
           return existing.metadata.url.replace('?dl=0', '?raw=1');
         }
-        // Fetch existing link if metadata not returned
         const listRes = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + dropboxAccessToken, 'Content-Type': 'application/json' },
@@ -376,7 +377,6 @@
     if (products.length === 0) return showError('Please select at least one product on display.');
     if (!imageDescription) return showError('Please provide an image description.');
     if (!files || !files.length) return showError('Please select at least one file to upload.');
-
 
     const imgTypeMap = { 'Sundae on-shelf': 'shelf', 'Competitor product': 'competitor', 'other': 'other' };
     const imgTypeCodes = imgTypeChecked.map(c => {
@@ -429,7 +429,6 @@
         if (folderLink) imageLinks.push(folderLink);
       }
 
-      // Summary txt
       const summary = [
         'SUNDAE PHOTO SUBMISSION SUMMARY',
         '================================',
@@ -441,6 +440,7 @@
         '  Store location: ' + location,
         '  Date taken:     ' + date,
         '', 'PRODUCTS ON DISPLAY:', products.length ? products.map(p => '  - ' + p).join('\n') : '  None selected',
+        '', 'IMAGE DESCRIPTION:', imageDescription,
         '', 'ADDITIONAL COMMENTS:', comments || '  None',
         '', 'FILES UPLOADED:', Array.from(files).map((f, i) => '  - ' + prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join('\n'),
         '', 'IMAGE LINKS:', imageLinks.length ? imageLinks.join('\n') : '  None'
@@ -451,7 +451,6 @@
       await uploadToDropbox(new File([summaryBlob], prefix + '_summary.txt'), summaryPath);
       done++; showProgress(100);
 
-      // Send to Google Sheets
       await fetch(SHEETS_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -500,7 +499,7 @@
     document.getElementById('photo_date').value = '';
     document.getElementById('imageDescription').value = '';
     document.getElementById('comments').value = '';
-    fileInput.value = ''; selectedFiles = []; renderFiles(null);
+    selectedFiles = []; renderFiles(null);
   }
 </script>
 </body>
