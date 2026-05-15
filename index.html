@@ -133,6 +133,15 @@
   </div>
 
   <div class="section-card">
+    <p class="section-title">Brand logo visibility <span class="required">*</span></p>
+    <p style="font-size:14px; color:#1a1a1a; margin-bottom:10px;">Is the brand logo clearly visible in the image?</p>
+    <div class="checkbox-list">
+      <label class="checkbox-item"><input type="radio" name="logo_visible" value="Yes"> Yes</label>
+      <label class="checkbox-item"><input type="radio" name="logo_visible" value="No"> No</label>
+    </div>
+  </div>
+
+  <div class="section-card">
     <p class="section-title">Image description <span class="required">*</span></p>
     <textarea id="imageDescription" placeholder="Please provide a brief description of your image(s) e.g. Cocktail Collection launch, Mother's Day gift sets, new shelf reset February 2027..."></textarea>
   </div>
@@ -171,7 +180,7 @@
   const DROPBOX_APP_KEY = 'rfmiw732pag3axo';
   const DROPBOX_APP_SECRET = 'pr6z68ammp8mmwu';
   const DROPBOX_FOLDER = '';
-  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwDbu43M3SIr9Ga0l_3ZBnw_0O8EPYSFZXzWRfTsCnvik721sMDRrE4PsivvFoQFeen/exec';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz2MslK0cVcrd2_mWsMmGH5ujSK0LvgnzvIjAnsVHLLvHtVpRrkgaLjwrzIksK199go/exec';
 
   let dropboxAccessToken = null;
   let selectedFiles = [];
@@ -365,7 +374,9 @@
     if (secondaryChecked && !secondaryType) return showError('Please select a secondary placement type.');
     if (secondaryChecked && secondaryType === 'other' && !secondaryOther) return showError('Please describe the secondary placement type.');
     if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
+    const logoVisible = document.querySelector('input[name="logo_visible"]:checked');
     if (products.length === 0) return showError('Please select at least one product on display.');
+    if (!logoVisible) return showError('Please indicate whether the brand logo is clearly visible.');
     if (!imageDescription) return showError('Please provide an image description.');
     if (!files || !files.length) return showError('Please select at least one file to upload.');
 
@@ -454,6 +465,7 @@
           imageType: imgTypesDisplay.join(', '),
           secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
           products: products.join(', '),
+          logoVisible: logoVisible ? logoVisible.value : '',
           imageDescription,
           comments,
           filesUploaded: Array.from(files).map((f, i) => prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join(', '),
@@ -484,6 +496,7 @@
     document.getElementById('secondaryOther').value = '';
     document.getElementById('otherCommentBox').style.display = 'none';
     document.getElementById('otherComment').value = '';
+    document.querySelectorAll('input[name="logo_visible"]').forEach(r => r.checked = false);
     document.getElementById('country').value = '';
     document.getElementById('retailer').value = '';
     document.getElementById('location').value = '';
