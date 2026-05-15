@@ -25,7 +25,7 @@
     .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
     .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
     .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1a1a1a; cursor: pointer; }
-    .checkbox-item input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #3a7bd5; flex-shrink: 0; }
+    .checkbox-item input[type="checkbox"], .checkbox-item input[type="radio"] { width: 15px; height: 15px; cursor: pointer; accent-color: #3a7bd5; flex-shrink: 0; }
     .sub-field { margin-top: 8px; margin-left: 23px; }
     .drop-zone { border: 1.5px dashed rgba(0,0,0,0.2); border-radius: 12px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: background 0.15s; }
     .drop-zone:hover, .drop-zone.dragover { background: #f5f5f3; }
@@ -49,6 +49,7 @@
     .badge-pdf { background: #faece7; color: #993c1d; }
     .badge-img { background: #e6f1fb; color: #185fa5; }
     .badge-txt { background: #eaf3de; color: #3b6d11; }
+    .badge-vid { background: #f0e6fb; color: #6b21a8; }
     .progress-bar-wrap { display: none; margin-top: 10px; background: #eee; border-radius: 99px; height: 6px; overflow: hidden; }
     .progress-bar { height: 100%; background: #3a7bd5; border-radius: 99px; width: 0%; transition: width 0.2s; }
     .status-msg { display: none; font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-top: 10px; }
@@ -62,6 +63,7 @@
 <div class="form-wrap">
   <h1>Sundae Photo Upload</h1>
 
+  <!-- Type of image -->
   <div class="section-card">
     <p class="section-title">Type of image <span class="required">*</span></p>
     <div class="checkbox-list">
@@ -87,6 +89,7 @@
     </div>
   </div>
 
+  <!-- Store details -->
   <div class="section-card">
     <p class="section-title">Store details</p>
     <div class="field">
@@ -121,6 +124,7 @@
     </div>
   </div>
 
+  <!-- Products on display -->
   <div class="section-card">
     <p class="section-title">Product on display <span class="required">*</span></p>
     <div class="checkbox-grid">
@@ -132,6 +136,7 @@
     </div>
   </div>
 
+  <!-- Brand logo visibility -->
   <div class="section-card">
     <p class="section-title">Brand logo visibility <span class="required">*</span></p>
     <p style="font-size:14px; color:#1a1a1a; margin-bottom:10px;">Is the brand logo clearly visible in the image?</p>
@@ -141,24 +146,27 @@
     </div>
   </div>
 
+  <!-- Image description -->
   <div class="section-card">
     <p class="section-title">Image description <span class="required">*</span></p>
     <textarea id="imageDescription" placeholder="Please provide a brief description of your image(s) e.g. Cocktail Collection launch, Mother's Day gift sets, new shelf reset February 2027..."></textarea>
   </div>
 
+  <!-- Additional comments -->
   <div class="section-card">
     <p class="section-title">Additional comments / notes</p>
     <textarea id="comments" placeholder="Any extra context, observations, or notes…"></textarea>
   </div>
 
+  <!-- File upload -->
   <div class="section-card">
-    <p class="section-title">Upload photos</p>
+    <p class="section-title">Upload photos &amp; videos</p>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="drop-zone-icon">📷</div>
       <p>Drop files here or click to browse</p>
-      <p class="hint">Accepted: JPG, PNG, GIF, PDF, TXT — multiple files allowed</p>
+      <p class="hint">Accepted: JPG, PNG, GIF, PDF, TXT, MP4, MOV, AVI — multiple files allowed</p>
     </div>
-    <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif,.pdf,.txt" multiple style="display:none">
+    <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.mp4,.mov,.avi" multiple style="display:none">
     <div class="file-list" id="fileList">
       <p class="file-list-title">Selected files</p>
       <div id="fileItems"></div>
@@ -176,6 +184,9 @@
 </div>
 
 <script>
+  // ============================================================
+  // DROPBOX CREDENTIALS — fill in App Key and App Secret
+  // ============================================================
   const DROPBOX_REFRESH_TOKEN = 'Ycoj9KpNuTwAAAAAAAAAAS5p1XvysVREJZ7ix5fF65MEQDEkqfX54mmCnU-oB_t5';
   const DROPBOX_APP_KEY = 'rfmiw732pag3axo';
   const DROPBOX_APP_SECRET = 'pr6z68ammp8mmwu';
@@ -184,6 +195,8 @@
 
   let dropboxAccessToken = null;
   let selectedFiles = [];
+
+  // ---- Utility functions ----
 
   function formatDateTime() {
     const now = new Date();
@@ -217,6 +230,7 @@
     if (ext === 'pdf') return '<span class="badge badge-pdf">PDF</span>';
     if (['jpg','jpeg','png','gif'].includes(ext)) return '<span class="badge badge-img">Image</span>';
     if (ext === 'txt') return '<span class="badge badge-txt">TXT</span>';
+    if (['mp4','mov','avi'].includes(ext)) return '<span class="badge badge-vid">Video</span>';
     return '';
   }
 
@@ -225,14 +239,18 @@
     if (ext === 'pdf') return 'background:#faece7;color:#993c1d;';
     if (['jpg','jpeg','png','gif'].includes(ext)) return 'background:#e6f1fb;color:#185fa5;';
     if (ext === 'txt') return 'background:#eaf3de;color:#3b6d11;';
+    if (['mp4','mov','avi'].includes(ext)) return 'background:#f0e6fb;color:#6b21a8;';
     return 'background:#eee;color:#666;';
   }
 
   function getIconLabel(name) {
     const ext = name.split('.').pop().toLowerCase();
     if (['jpg','jpeg','png','gif'].includes(ext)) return 'IMG';
+    if (['mp4','mov','avi'].includes(ext)) return 'VID';
     return ext.toUpperCase().slice(0, 3);
   }
+
+  // ---- File list rendering ----
 
   function renderFiles(files) {
     const list = document.getElementById('fileList');
@@ -258,6 +276,8 @@
     renderFiles(selectedFiles);
   }
 
+  // ---- File input & drag/drop ----
+
   const fileInput = document.getElementById('fileInput');
   const dropZone = document.getElementById('dropZone');
 
@@ -277,6 +297,8 @@
     }
   });
 
+  // ---- Checkbox/radio toggles ----
+
   document.getElementById('secondaryCheck').addEventListener('change', function() {
     document.getElementById('secondaryOptions').style.display = this.checked ? 'block' : 'none';
     if (!this.checked) {
@@ -295,6 +317,8 @@
     document.getElementById('otherCommentBox').style.display = this.checked ? 'block' : 'none';
     if (!this.checked) document.getElementById('otherComment').value = '';
   });
+
+  // ---- Dropbox functions ----
 
   async function getDropboxToken() {
     const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
@@ -352,6 +376,8 @@
     }
   }
 
+  // ---- Main upload handler ----
+
   async function handleUpload() {
     const country = document.getElementById('country').value;
     const retailer = document.getElementById('retailer').value.trim();
@@ -367,6 +393,7 @@
     const secondaryType = document.getElementById('secondaryType').value;
     const secondaryOther = document.getElementById('secondaryOther').value.trim();
     const products = [...document.querySelectorAll('input[name="product"]:checked')].map(c => c.value);
+    const logoVisible = document.querySelector('input[name="logo_visible"]:checked');
 
     if (!country) return showError('Please select a country.');
     if (!retailer || !location || !date) return showError('Please fill in all required store details.');
@@ -374,7 +401,6 @@
     if (secondaryChecked && !secondaryType) return showError('Please select a secondary placement type.');
     if (secondaryChecked && secondaryType === 'other' && !secondaryOther) return showError('Please describe the secondary placement type.');
     if (otherChecked && !otherComment) return showError('Please describe the "Other" image type.');
-    const logoVisible = document.querySelector('input[name="logo_visible"]:checked');
     if (products.length === 0) return showError('Please select at least one product on display.');
     if (!logoVisible) return showError('Please indicate whether the brand logo is clearly visible.');
     if (!imageDescription) return showError('Please provide an image description.');
@@ -406,6 +432,7 @@
 
     try {
       await getDropboxToken();
+
       const total = files.length + 1;
       let done = 0;
       let fileIndex = 1;
@@ -416,7 +443,9 @@
       for (const file of Array.from(files)) {
         const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
         const newName = prefix + '_' + fileIndex + (ext ? '.' + ext : '');
-        const filePath = isMultiple ? folderPath + '/' + newName : DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + newName;
+        const filePath = isMultiple
+          ? folderPath + '/' + newName
+          : DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + newName;
         await uploadToDropbox(file, filePath);
         if (!isMultiple) {
           const link = await getDropboxLink(filePath);
@@ -441,15 +470,18 @@
         '  Retailer:       ' + retailer,
         '  Store location: ' + location,
         '  Date taken:     ' + formatDate(date),
-        '', 'PRODUCTS ON DISPLAY:', products.length ? products.map(p => '  - ' + p).join('\n') : '  None selected',
+        '', 'PRODUCTS ON DISPLAY:', products.map(p => '  - ' + p).join('\n'),
+        '', 'BRAND LOGO VISIBLE: ' + (logoVisible ? logoVisible.value : 'N/A'),
         '', 'IMAGE DESCRIPTION:', imageDescription,
         '', 'ADDITIONAL COMMENTS:', comments || '  None',
-        '', 'FILES UPLOADED:', Array.from(files).map((f, i) => '  - ' + prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join('\n'),
+        '', 'FILES UPLOADED:', files.map((f, i) => '  - ' + prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join('\n'),
         '', 'IMAGE LINKS:', imageLinks.length ? imageLinks.join('\n') : '  None'
       ].join('\n');
 
       const summaryBlob = new Blob([summary], { type: 'text/plain' });
-      const summaryPath = isMultiple ? folderPath + '/' + prefix + '_summary.txt' : DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + prefix + '_summary.txt';
+      const summaryPath = isMultiple
+        ? folderPath + '/' + prefix + '_summary.txt'
+        : DROPBOX_FOLDER + '/' + slugify(country) + '/' + slugify(retailer) + '/' + prefix + '_summary.txt';
       await uploadToDropbox(new File([summaryBlob], prefix + '_summary.txt'), summaryPath);
       done++; showProgress(100);
 
@@ -459,16 +491,17 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dateSubmitted: formatDateTime(),
-          country, retailer,
+          country,
+          retailer,
           storeLocation: location,
           datePhotoTaken: formatDate(date),
           imageType: imgTypesDisplay.join(', '),
           secondaryPlacementType: secondaryChecked ? (secondaryType === 'other' ? secondaryOther : secondaryType) : 'N/A',
           products: products.join(', '),
-          logoVisible: logoVisible ? logoVisible.value : '',
+          logoVisible: logoVisible ? logoVisible.value : 'N/A',
           imageDescription,
           comments,
-          filesUploaded: Array.from(files).map((f, i) => prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join(', '),
+          filesUploaded: files.map((f, i) => prefix + '_' + (i+1) + '.' + f.name.split('.').pop()).join(', '),
           imageLinks: imageLinks.join(', ')
         })
       });
@@ -483,6 +516,8 @@
     }
   }
 
+  // ---- UI helpers ----
+
   function showProgress(pct) { document.getElementById('progressWrap').style.display = 'block'; document.getElementById('progressBar').style.width = pct + '%'; }
   function hideProgress() { document.getElementById('progressWrap').style.display = 'none'; }
   function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = '✕ ' + msg; el.style.display = 'block'; }
@@ -490,13 +525,13 @@
 
   function resetForm() {
     document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     document.getElementById('secondaryOptions').style.display = 'none';
     document.getElementById('secondaryType').value = '';
     document.getElementById('secondaryOtherBox').style.display = 'none';
     document.getElementById('secondaryOther').value = '';
     document.getElementById('otherCommentBox').style.display = 'none';
     document.getElementById('otherComment').value = '';
-    document.querySelectorAll('input[name="logo_visible"]').forEach(r => r.checked = false);
     document.getElementById('country').value = '';
     document.getElementById('retailer').value = '';
     document.getElementById('location').value = '';
